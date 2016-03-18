@@ -111,6 +111,22 @@ static LRESULT CALLBACK window_callback_func(HWND hh, UINT mm, WPARAM ww, LPARAM
             wnd->should_close = 1;
             break;
         }
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        {
+            /* Retrieve scancode and action from lParam */
+            const int scancode = (ll >> 16) & 0x1FF;
+            const int action = (ll >> 31 & 1) ? KEY_ACTION_RELEASE : KEY_ACTION_PRESS;
+
+            /* Translate system keycode to our key value */
+            int key = wnd->internal.keymap[scancode];
+
+            /* Set the pressed state of the current key */
+            wnd->keys[key] = (action == KEY_ACTION_PRESS) ? 1 : 0;
+            break;
+        }
         default:
             return DefWindowProc(hh, mm, ww, ll);
     }
@@ -162,10 +178,21 @@ static HWND create_window(struct window* wnd)
     return hwnd;
 }
 
+static void populate_scan_map(struct window* window)
+{
+    populate_keycode_map((int*)window->internal.keymap, 512);
+}
+
 void open_window(struct window* window)
 {
     /* Window handle and window message */
     HWND hwnd;
+
+    /* Populate the internal keyscan map */
+    populate_scan_map(window);
+
+    /* Clear the key state */
+    memset(window->keys, 0, KEY_LAST + 1);
 
     /* Create the window instance */
     hwnd = create_window(window);
@@ -204,4 +231,9 @@ void close_window(struct window* wnd)
 void swap_buffers(struct window* wnd)
 {
     SwapBuffers(wnd->internal.hdc);
+}
+
+int is_key_pressed(struct window* wnd, enum key k)
+{
+    return wnd->keys[k];
 }
