@@ -158,6 +158,7 @@ enum key
     KEY_RIGHT_ALT     = 346,
     KEY_RIGHT_SUPER   = 347,
     KEY_MENU          = 348,
+    KEY_LAST
 };
 
 /*==============================================================
@@ -176,7 +177,8 @@ enum mouse_button
     MOUSE_BTN8   = 7,
     MOUSE_LEFT   = MOUSE_BTN1,
     MOUSE_RIGHT  = MOUSE_BTN2,
-    MOUSE_MIDDLE = MOUSE_BTN3
+    MOUSE_MIDDLE = MOUSE_BTN3,
+    MOUSE_BTN_LAST
 };
 
 /*==============================================================
@@ -201,6 +203,7 @@ enum joystick
     JOYSTICK_BUTTON14 = 13,
     JOYSTICK_BUTTON15 = 14,
     JOYSTICK_BUTTON16 = 15,
+    JOYSTICK_BUTTON_LAST
 };
 
 /*==============================================================
@@ -213,5 +216,10 @@ enum key_action
     KEY_ACTION_PRESS   = 1,
     KEY_ACTION_REPEAT  = 2
 };
+
+/*
+ * Populates keycode map from system keycodes to our keyboard codes
+ */
+void populate_keycode_map(int* map, unsigned int size);
 
 #endif // ! _INPUT_H_
