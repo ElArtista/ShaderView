@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 
     /* Main loop */
     time_val_t t1 = get_timer_value();
-    while(!window_should_close(&window))
+    while(!window_should_close(&window) && !is_key_pressed(&window, KEY_ESCAPE))
     {
         time_val_t t2 = get_timer_value();
         if (t2 - t1 >= 1000 / FPS)
