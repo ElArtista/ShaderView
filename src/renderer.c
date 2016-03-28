@@ -2,32 +2,8 @@
 #include <GL/glu.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-const GLchar* vert_shader_src =
-"#version 330 core                        \n\
-in vec3 position;                         \n\
-in vec2 uvCoords;                         \n\
-                                          \n\
-out vec2 UVCoords;                        \n\
-                                          \n\
-void main(void)                           \n\
-{                                         \n\
-    UVCoords = uvCoords;                  \n\
-    gl_Position = vec4(position, 1.0f);   \n\
-}";
-
-const GLchar* frag_shader_src =
-"#version 330 core                                 \n\
-out vec4 color;                                    \n\
-in vec2 UVCoords;                                  \n\
-                                                   \n\
-uniform sampler2D imageData;                       \n\
-                                                   \n\
-void main(void)                                    \n\
-{                                                  \n\
-    vec4 idata = texture(imageData, UVCoords);     \n\
-    color = idata;                                 \n\
-}";
+#include "timer.h"
+#include "defshdr.h"
 
 /* --------------------------------------------------
  * Renders a screen space quad
@@ -36,10 +12,10 @@ static void render_quad()
 {
     GLfloat quad_vert[] =
     {
-       -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-       -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f
+       -1.0f,  1.0f, 0.0f,
+       -1.0f, -1.0f, 0.0f,
+        1.0f,  1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f
     };
 
     /* Setup vertex data */
@@ -52,10 +28,8 @@ static void render_quad()
     GLuint quad_vao;
     glGenVertexArrays(1, &quad_vao);
     glBindVertexArray(quad_vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
 
     /* Dispatch draw operation */
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -156,14 +130,14 @@ void init_renderer(struct render_context* ctx)
 
     /* Compile vertex shader */
     GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert_shader, 1, &vert_shader_src, 0);
+    glShaderSource(vert_shader, 1, &def_vert_sh_src, 0);
     glCompileShader(vert_shader);
     check_last_compile_error(vert_shader);
     ctx->vert_shader = vert_shader;
 
     /* Compile fragment shader */
     GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag_shader, 1, &frag_shader_src, 0);
+    glShaderSource(frag_shader, 1, &def_frag_sh_src, 0);
     glCompileShader(frag_shader);
     check_last_compile_error(frag_shader);
     ctx->frag_shader = frag_shader;
@@ -190,33 +164,20 @@ struct pixel
  * -------------------------------------------------- */
 void render(struct render_context* ctx)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    /* Create sample image data */
-    struct pixel image_data[4];
-    memset((void*)image_data, 0, sizeof(image_data));
-    image_data[0].r = 100;
-    image_data[0].b = 50;
-    image_data[3].b = 255;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /* Setup uniforms */
     glUseProgram(ctx->program);
     glBindAttribLocation(ctx->program, 0, "position");
-    glBindAttribLocation(ctx->program, 1, "uvCoords");
-    GLuint img_loc = glGetUniformLocation(ctx->program, "imageData");
-    glUniform1i(img_loc, 0);
 
-    /* Bind texture */
-    GLuint texture = load_texture(2, 2, (GLvoid*) image_data);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    long long timer_value = get_timer_value();
+    float time = ((timer_value / 30000) % 200) / 100.0f;
+    glUniform1f(glGetUniformLocation(ctx->program, "time"), time);
+    glUniform2f(glGetUniformLocation(ctx->program, "resolution"), 800.0f, 600.0f);
 
     /* Render */
     render_quad();
     glUseProgram(0);
-
-    /* Free sample texture */
-    glDeleteTextures(1, &texture);
 }
 
 /* --------------------------------------------------
